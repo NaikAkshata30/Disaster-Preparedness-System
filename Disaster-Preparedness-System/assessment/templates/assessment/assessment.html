@@ -1,0 +1,188 @@
+{% extends 'assessment/base.html' %}
+
+{% block title %}Assessment Form{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>📝 Disaster Preparedness Assessment</h1>
+        <p class="lead mb-0 mt-2">Help us understand your current level of preparedness</p>
+    </div>
+
+    <!-- Assessment Form -->
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">📋 Assessment Questionnaire</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="assessmentForm">
+                        {% csrf_token %}
+                        
+                        <!-- Location Information -->
+                        <div class="mb-4">
+                            <h5 class="text-primary border-bottom pb-2">📍 Location Information</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.location_type.id_for_label }}" class="form-label">
+                                        {{ form.location_type.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.location_type }}
+                                    {% if form.location_type.errors %}
+                                        <div class="text-danger mt-1">{{ form.location_type.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.housing_type.id_for_label }}" class="form-label">
+                                        {{ form.housing_type.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.housing_type }}
+                                    {% if form.housing_type.errors %}
+                                        <div class="text-danger mt-1">{{ form.housing_type.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Household Information -->
+                        <div class="mb-4">
+                            <h5 class="text-primary border-bottom pb-2">👨‍👩‍👧‍👦 Household Information</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.household_size.id_for_label }}" class="form-label">
+                                        {{ form.household_size.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.household_size }}
+                                    <small class="form-text text-muted">Number of people living in your household</small>
+                                    {% if form.household_size.errors %}
+                                        <div class="text-danger mt-1">{{ form.household_size.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.self_rated_preparedness.id_for_label }}" class="form-label">
+                                        {{ form.self_rated_preparedness.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.self_rated_preparedness }}
+                                    <small class="form-text text-muted">Rate yourself: 1 (Very Low) to 5 (Very High)</small>
+                                    {% if form.self_rated_preparedness.errors %}
+                                        <div class="text-danger mt-1">{{ form.self_rated_preparedness.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preparedness Resources -->
+                        <div class="mb-4">
+                            <h5 class="text-primary border-bottom pb-2">🎒 Preparedness Resources</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        {{ form.has_emergency_kit }}
+                                        <label class="form-check-label" for="{{ form.has_emergency_kit.id_for_label }}">
+                                            {{ form.has_emergency_kit.label }}
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted">First-aid, flashlight, food, water, etc.</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        {{ form.has_water_storage }}
+                                        <label class="form-check-label" for="{{ form.has_water_storage.id_for_label }}">
+                                            {{ form.has_water_storage.label }}
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted">At least 3 days supply</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Knowledge & Experience -->
+                        <div class="mb-4">
+                            <h5 class="text-primary border-bottom pb-2">📚 Knowledge & Experience</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        {{ form.has_first_aid_knowledge }}
+                                        <label class="form-check-label" for="{{ form.has_first_aid_knowledge.id_for_label }}">
+                                            {{ form.has_first_aid_knowledge.label }}
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted">Know basic first-aid techniques</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        {{ form.past_disaster_experience }}
+                                        <label class="form-check-label" for="{{ form.past_disaster_experience.id_for_label }}">
+                                            {{ form.past_disaster_experience.label }}
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted">Have you experienced a disaster before?</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Emergency Planning -->
+                        <div class="mb-4">
+                            <h5 class="text-primary border-bottom pb-2">🚪 Emergency Planning</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        {{ form.has_evacuation_plan }}
+                                        <label class="form-check-label" for="{{ form.has_evacuation_plan.id_for_label }}">
+                                            {{ form.has_evacuation_plan.label }}
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted">Do you have a family evacuation plan?</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        {{ form.knows_emergency_contacts }}
+                                        <label class="form-check-label" for="{{ form.knows_emergency_contacts.id_for_label }}">
+                                            {{ form.knows_emergency_contacts.label }}
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted">Police, fire, hospital numbers</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg btn-custom">
+                                ✅ Submit Assessment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Form validation feedback
+    document.getElementById('assessmentForm').addEventListener('submit', function(e) {
+        const requiredFields = ['location_type', 'household_size', 'housing_type', 'self_rated_preparedness'];
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            const input = document.getElementById('id_' + field);
+            if (!input.value) {
+                isValid = false;
+                input.classList.add('is-invalid');
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('⚠️ Please fill all required fields marked with *');
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

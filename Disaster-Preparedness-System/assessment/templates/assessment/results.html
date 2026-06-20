@@ -1,0 +1,202 @@
+{% extends 'assessment/base.html' %}
+
+{% block title %}Assessment Results{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>📊 Your Preparedness Assessment Results</h1>
+        <p class="lead mb-0 mt-2">Assessment ID: #{{ response.id }}</p>
+    </div>
+
+    <!-- Score Display -->
+    <div class="row mb-4">
+        <div class="col-md-8 offset-md-2">
+            <div class="card border-{{ feedback.class }} shadow-lg">
+                <div class="card-header bg-{{ feedback.class }} text-white text-center">
+                    <h3 class="mb-0">{{ feedback.icon }} {{ feedback.title }}</h3>
+                </div>
+                <div class="card-body text-center py-5">
+                    <h1 class="display-1 fw-bold text-{{ feedback.class }}">{{ response.preparedness_score }}/100</h1>
+                    <p class="lead mt-3">{{ feedback.message }}</p>
+                    <div class="progress mt-4" style="height: 30px;">
+                        <div class="progress-bar bg-{{ feedback.class }}" role="progressbar" 
+                             style="width: {{ response.preparedness_score }}%;" 
+                             aria-valuenow="{{ response.preparedness_score }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            {{ response.preparedness_score }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assessment Details -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">📋 Your Responses</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <td><strong>📍 Location Type:</strong></td>
+                                <td>{{ response.get_location_type_display }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>🏠 Housing Type:</strong></td>
+                                <td>{{ response.get_housing_type_display }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>👨‍👩‍👧‍👦 Household Size:</strong></td>
+                                <td>{{ response.household_size }} people</td>
+                            </tr>
+                            <tr>
+                                <td><strong>⭐ Self-Rated Level:</strong></td>
+                                <td>{{ response.self_rated_preparedness }}/5</td>
+                            </tr>
+                            <tr>
+                                <td><strong>🎒 Emergency Kit:</strong></td>
+                                <td>
+                                    {% if response.has_emergency_kit %}
+                                        <span class="badge bg-success">✅ Yes</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">❌ No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>💧 Water Storage:</strong></td>
+                                <td>
+                                    {% if response.has_water_storage %}
+                                        <span class="badge bg-success">✅ Yes</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">❌ No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>⚕️ First-Aid Knowledge:</strong></td>
+                                <td>
+                                    {% if response.has_first_aid_knowledge %}
+                                        <span class="badge bg-success">✅ Yes</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">❌ No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>⚠️ Past Experience:</strong></td>
+                                <td>
+                                    {% if response.past_disaster_experience %}
+                                        <span class="badge bg-success">✅ Yes</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">❌ No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>🚪 Evacuation Plan:</strong></td>
+                                <td>
+                                    {% if response.has_evacuation_plan %}
+                                        <span class="badge bg-success">✅ Yes</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">❌ No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>📞 Emergency Contacts:</strong></td>
+                                <td>
+                                    {% if response.knows_emergency_contacts %}
+                                        <span class="badge bg-success">✅ Yes</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">❌ No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">⚠️ Identified Gaps</h5>
+                </div>
+                <div class="card-body">
+                    {% if gaps %}
+                        <p class="mb-3"><strong>Priority Action Required:</strong></p>
+                        <div class="list-group">
+                            {% for gap in gaps %}
+                                <div class="list-group-item list-group-item-warning">
+                                    <strong>❌ Missing:</strong> {{ gap }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success">
+                            <strong>✅ Excellent!</strong> No major gaps identified. Keep maintaining your preparedness level.
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <h6>📌 Priority Level:</h6>
+                        <span class="badge bg-{{ feedback.class }} fs-6">{{ feedback.priority }} PRIORITY</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations Preview -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5>💡 Quick Recommendations</h5>
+                    <ul class="mb-0">
+                        {% if not response.has_emergency_kit %}
+                            <li>Prepare an emergency kit with essential supplies (water, food, flashlight, first-aid kit)</li>
+                        {% endif %}
+                        {% if not response.has_water_storage %}
+                            <li>Store at least 3 days of water supply (1 gallon per person per day)</li>
+                        {% endif %}
+                        {% if not response.has_first_aid_knowledge %}
+                            <li>Learn basic first-aid skills through online courses or local training</li>
+                        {% endif %}
+                        {% if not response.has_evacuation_plan %}
+                            <li>Create a family evacuation plan with meeting points and escape routes</li>
+                        {% endif %}
+                        {% if not response.knows_emergency_contacts %}
+                            <li>Keep emergency contact numbers readily accessible (police, fire, hospital)</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <a href="{% url 'recommendations' %}" class="btn btn-success btn-lg btn-custom me-2">
+                💡 View Detailed Recommendations
+            </a>
+            <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg btn-custom me-2">
+                📊 View Analytics Dashboard
+            </a>
+            <a href="{% url 'assessment' %}" class="btn btn-secondary btn-lg btn-custom">
+                🔄 Take New Assessment
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

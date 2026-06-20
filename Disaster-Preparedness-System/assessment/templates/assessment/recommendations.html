@@ -1,0 +1,286 @@
+{% extends 'assessment/base.html' %}
+
+{% block title %}Recommendations{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>💡 Disaster Preparedness Recommendations</h1>
+        <p class="lead mb-0 mt-2">Essential tips and checklist for staying prepared</p>
+    </div>
+
+    <!-- Personalized Recommendations -->
+    {% if personalized_tips %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="alert alert-warning border-warning">
+                <h4 class="alert-heading">⚠️ Personalized Recommendations Based on Your Assessment</h4>
+                <ul class="mb-0">
+                    {% for tip in personalized_tips %}
+                        <li>{{ tip }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- General Tips -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h3 class="mb-3">📋 General Preparedness Tips</h3>
+        </div>
+        {% for tip_category in general_tips %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ tip_category.icon }} {{ tip_category.category }}</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for item in tip_category.items %}
+                            <li class="list-group-item">✅ {{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Comprehensive Checklist -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h3 class="mb-3">✅ Comprehensive Preparedness Checklist</h3>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">🎒 Emergency Kit Essentials</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="water">
+                        <label class="form-check-label" for="water">
+                            Water (1 gallon per person per day for 3 days)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="food">
+                        <label class="form-check-label" for="food">
+                            Non-perishable food (3-day supply)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="flashlight">
+                        <label class="form-check-label" for="flashlight">
+                            Flashlight and extra batteries
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="radio">
+                        <label class="form-check-label" for="radio">
+                            Battery-powered or hand-crank radio
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="firstaid">
+                        <label class="form-check-label" for="firstaid">
+                            First-aid kit
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="whistle">
+                        <label class="form-check-label" for="whistle">
+                            Whistle to signal for help
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="mask">
+                        <label class="form-check-label" for="mask">
+                            Dust masks and plastic sheeting
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="tools">
+                        <label class="form-check-label" for="tools">
+                            Basic tools (pliers, wrench, screwdriver)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="matches">
+                        <label class="form-check-label" for="matches">
+                            Matches in waterproof container
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">📄 Important Documents</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="id">
+                        <label class="form-check-label" for="id">
+                            Copies of identification documents
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="insurance">
+                        <label class="form-check-label" for="insurance">
+                            Insurance policies
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="bank">
+                        <label class="form-check-label" for="bank">
+                            Bank account records
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="medical">
+                        <label class="form-check-label" for="medical">
+                            Medical records and prescriptions
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="photos">
+                        <label class="form-check-label" for="photos">
+                            Family photos for identification
+                        </label>
+                    </div>
+                    <hr>
+                    <div class="alert alert-warning mb-0">
+                        <small><strong>💡 Tip:</strong> Store all documents in waterproof containers</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">👨‍👩‍👧‍👦 Family Preparedness Plan</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="meeting">
+                        <label class="form-check-label" for="meeting">
+                            Establish family meeting points
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="contacts">
+                        <label class="form-check-label" for="contacts">
+                            Create emergency contact list
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="routes">
+                        <label class="form-check-label" for="routes">
+                            Plan evacuation routes
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="practice">
+                        <label class="form-check-label" for="practice">
+                            Practice evacuation drills
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="pets">
+                        <label class="form-check-label" for="pets">
+                            Plan for pets
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="elderly">
+                        <label class="form-check-label" for="elderly">
+                            Special arrangements for elderly/disabled
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">📞 Emergency Contacts</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr>
+                                <td><strong>🚨 Police:</strong></td>
+                                <td>100</td>
+                            </tr>
+                            <tr>
+                                <td><strong>🚒 Fire Brigade:</strong></td>
+                                <td>101</td>
+                            </tr>
+                            <tr>
+                                <td><strong>🚑 Ambulance:</strong></td>
+                                <td>102</td>
+                            </tr>
+                            <tr>
+                                <td><strong>🆘 Disaster Helpline:</strong></td>
+                                <td>1078</td>
+                            </tr>
+                            <tr>
+                                <td><strong>☎️ Women's Helpline:</strong></td>
+                                <td>1091</td>
+                            </tr>
+                            <tr>
+                                <td><strong>👶 Child Helpline:</strong></td>
+                                <td>1098</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Resources -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5>📚 Additional Resources</h5>
+                    <ul>
+                        <li>National Disaster Management Authority (NDMA): <a href="https://ndma.gov.in" target="_blank">ndma.gov.in</a></li>
+                        <li>Red Cross Disaster Preparedness: <a href="https://www.redcross.org" target="_blank">redcross.org</a></li>
+                        <li>WHO Emergency Resources: <a href="https://www.who.int" target="_blank">who.int</a></li>
+                        <li>Local disaster management office contact information</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    // Save checklist state to localStorage
+    document.querySelectorAll('.form-check-input').forEach(checkbox => {
+        // Load saved state
+        const savedState = localStorage.getItem(checkbox.id);
+        if (savedState === 'true') {
+            checkbox.checked = true;
+        }
+        
+        // Save on change
+        checkbox.addEventListener('change', function() {
+            localStorage.setItem(this.id, this.checked);
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

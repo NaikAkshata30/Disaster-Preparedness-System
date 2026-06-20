@@ -1,0 +1,396 @@
+{% extends 'assessment/base.html' %}
+
+{% block title %}Risk Analysis{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analysis-hero {
+        background: linear-gradient(135deg, rgba(13, 110, 253, 0.12), rgba(111, 66, 193, 0.14));
+        border: 1px solid rgba(13, 110, 253, 0.12);
+        border-radius: 1rem;
+        padding: 1.4rem;
+    }
+
+    .summary-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(13, 110, 253, 0.08);
+        color: #1e3a8a;
+        font-weight: 600;
+        margin: 0.2rem 0.35rem 0.2rem 0;
+    }
+
+    .insight-card {
+        border-radius: 1rem;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .insight-card .metric-value {
+        font-size: 2.2rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .soft-panel {
+        background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+        border: 1px solid rgba(13, 110, 253, 0.08);
+        border-radius: 1rem;
+    }
+
+    .risk-card {
+        border-radius: 1.1rem;
+        overflow: hidden;
+        height: 100%;
+        animation: fadeUp 0.5s ease both;
+    }
+
+    .risk-card .card-header {
+        border-bottom: none;
+        padding: 1rem 1.2rem;
+    }
+
+    .risk-score {
+        font-size: 2.35rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+    }
+
+    .score-progress {
+        height: 0.8rem;
+        border-radius: 999px;
+        background: #edf2f7;
+        overflow: hidden;
+    }
+
+    .score-progress .progress-bar {
+        width: 0;
+        transition: width 1.1s ease;
+        border-radius: 999px;
+    }
+
+    .factor-item {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.7rem 0;
+        border-bottom: 1px dashed rgba(33, 37, 41, 0.1);
+    }
+
+    .factor-item:last-child {
+        border-bottom: none;
+    }
+
+    .factor-copy {
+        flex: 1;
+    }
+
+    .factor-copy small {
+        color: #6c757d;
+        display: block;
+        margin-top: 0.2rem;
+    }
+
+    .impact-pill {
+        min-width: 68px;
+        text-align: center;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 0.35rem 0.7rem;
+        color: #fff;
+        font-size: 0.9rem;
+    }
+
+    .recommendation-list li {
+        margin-bottom: 0.55rem;
+    }
+
+    .radar-shell {
+        min-height: 420px;
+    }
+
+    .table thead th {
+        white-space: nowrap;
+    }
+
+    @keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="page-header">
+        <h1>⚠️ Disaster-wise Risk Analysis</h1>
+        <p class="lead mb-0 mt-2">Dynamic preparedness insights powered by actual assessment responses</p>
+    </div>
+
+    {% if no_data %}
+        <div class="alert alert-warning text-center" role="alert">
+            <h4 class="alert-heading">⚠️ No Data Available</h4>
+            <p>There are no assessment responses yet. Please take an assessment first to view the personalized preparedness analysis.</p>
+            <hr>
+            <a href="{% url 'assessment' %}" class="btn btn-primary btn-custom">📝 Take Assessment Now</a>
+        </div>
+    {% else %}
+        <div class="analysis-hero mb-4">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <h3 class="mb-2">Assessment-driven readiness profile</h3>
+                    <p class="mb-3 text-muted">
+                        This analysis is generated from the latest submitted assessment and recalculates every disaster score,
+                        risk level, recommendation, and radar chart from the real answers below.
+                    </p>
+                    <div>
+                        <span class="summary-chip">📍 {{ response.get_location_type_display }}</span>
+                        <span class="summary-chip">🏠 {{ response.get_housing_type_display }}</span>
+                        <span class="summary-chip">👨‍👩‍👧‍👦 {{ response.household_size }} family members</span>
+                        <span class="summary-chip">⭐ Self-rated {{ response.self_rated_preparedness }}/5</span>
+                        <span class="summary-chip">🗂️ {{ assessment_count }} total assessment{{ assessment_count|pluralize }}</span>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card insight-card border-{{ overall_class }} h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <small class="text-uppercase text-muted fw-semibold">Overall Preparedness</small>
+                            <div class="metric-value text-{{ overall_class }} mt-2">{{ overall_score|floatformat:1 }}/100</div>
+                            <div class="mt-2 badge bg-{{ overall_class }} fs-6">{{ overall_level }}</div>
+                            <p class="text-muted small mt-3 mb-0">Latest response updated on {{ response.updated_at|date:"M d, Y H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-4">
+                <div class="card soft-panel h-100">
+                    <div class="card-body">
+                        <small class="text-uppercase text-muted fw-semibold">Highest current risk</small>
+                        <h4 class="mt-2 mb-1">{{ highest_risk.icon }} {{ highest_risk.name }}</h4>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
+                            <span class="badge bg-{{ highest_risk.risk_class }}">{{ highest_risk.risk_level }}</span>
+                            <span class="text-muted">{{ highest_risk.score|floatformat:1 }}/100 preparedness</span>
+                        </div>
+                        <p class="mb-0 text-muted">{{ highest_risk.priority_action }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card soft-panel h-100">
+                    <div class="card-body">
+                        <small class="text-uppercase text-muted fw-semibold">Strongest disaster readiness</small>
+                        <h4 class="mt-2 mb-1">{{ strongest_disaster.icon }} {{ strongest_disaster.name }}</h4>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
+                            <span class="badge bg-{{ strongest_disaster.risk_class }}">{{ strongest_disaster.risk_level }}</span>
+                            <span class="text-muted">{{ strongest_disaster.score|floatformat:1 }}/100 preparedness</span>
+                        </div>
+                        <p class="mb-0 text-muted">{{ strongest_disaster.risk_description }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card soft-panel h-100">
+                    <div class="card-body">
+                        <small class="text-uppercase text-muted fw-semibold">Priority action stack</small>
+                        <ul class="mb-0 mt-3 ps-3">
+                            {% for action in priority_actions|slice:":3" %}
+                                <li class="mb-2"><strong>{{ action.icon }} {{ action.disaster }}:</strong> {{ action.action }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card soft-panel mb-4">
+            <div class="card-header bg-white border-0 pt-4 px-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                    <div>
+                        <h4 class="mb-1">📡 Preparedness Capability Radar</h4>
+                        <p class="text-muted mb-0">Six readiness dimensions are recalculated from the actual assessment answers.</p>
+                    </div>
+                    <div class="text-end">
+                        <div class="small text-muted">Strongest capability</div>
+                        <div class="fw-semibold text-success">{{ radar_chart.strongest.name }} · {{ radar_chart.strongest.score|floatformat:1 }}</div>
+                        <div class="small text-muted mt-2">Weakest capability</div>
+                        <div class="fw-semibold text-danger">{{ radar_chart.weakest.name }} · {{ radar_chart.weakest.score|floatformat:1 }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body pt-0">
+                <div id="preparedness-radar" class="radar-shell"></div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            {% for disaster in disaster_analysis %}
+                <div class="col-xl-6">
+                    <div class="card risk-card border-{{ disaster.risk_class }} shadow-sm">
+                        <div class="card-header bg-{{ disaster.risk_class }} text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h4 class="mb-0">{{ disaster.icon }} {{ disaster.name }}</h4>
+                            <span class="badge text-bg-light">{{ disaster.risk_level }}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+                                <div>
+                                    <div class="risk-score text-{{ disaster.risk_class }}">{{ disaster.score|floatformat:1 }}/100</div>
+                                    <div class="text-muted">Preparedness score</div>
+                                </div>
+                                <div class="text-lg-end">
+                                    <div class="small text-muted text-uppercase fw-semibold">Interpretation</div>
+                                    <div class="fw-semibold">{{ disaster.risk_description }}</div>
+                                </div>
+                            </div>
+
+                            <div class="score-progress mb-4">
+                                <div class="progress-bar bg-{{ disaster.risk_class }}" data-progress="{{ disaster.score|floatformat:1 }}"></div>
+                            </div>
+
+                            <div class="row g-4">
+                                <div class="col-md-7">
+                                    <h6 class="mb-3">Why this score was assigned</h6>
+                                    {% for factor in disaster.factors %}
+                                        <div class="factor-item">
+                                            <div class="factor-copy">
+                                                <div><strong>{{ factor.status_icon }} {{ factor.label }}</strong></div>
+                                                <small>{{ factor.detail }}</small>
+                                            </div>
+                                            <span class="impact-pill bg-{{ factor.impact_class }}">{{ factor.impact_label }}</span>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-5">
+                                    <h6 class="mb-3">Personalized actions</h6>
+                                    <ul class="recommendation-list ps-3 mb-0">
+                                        {% for recommendation in disaster.recommendations %}
+                                            <li>{{ recommendation }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="card mt-4 shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">📋 Detailed Risk Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Disaster Type</th>
+                                <th>Preparedness Score</th>
+                                <th>Risk Level</th>
+                                <th>Top Gap</th>
+                                <th>Priority Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for disaster in disaster_analysis %}
+                                <tr>
+                                    <td><strong>{{ disaster.icon }} {{ disaster.name }}</strong></td>
+                                    <td>
+                                        <div class="fw-semibold">{{ disaster.score|floatformat:1 }}/100</div>
+                                    </td>
+                                    <td><span class="badge bg-{{ disaster.risk_class }}">{{ disaster.risk_level }}</span></td>
+                                    <td>
+                                        {% with weakest=disaster.factors|dictsort:"impact"|first %}
+                                            {% if weakest and weakest.impact < 0 %}
+                                                {{ weakest.label }}
+                                            {% else %}
+                                                Maintain current readiness
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    <td>{{ disaster.priority_action }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% if not no_data %}
+    {{ radar_chart|json_script:"radar-chart-data" }}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if not no_data %}
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const radarData = JSON.parse(document.getElementById('radar-chart-data').textContent);
+        const progressBars = document.querySelectorAll('.progress-bar[data-progress]');
+
+        progressBars.forEach((bar, index) => {
+            setTimeout(() => {
+                bar.style.width = `${bar.dataset.progress}%`;
+            }, 150 + (index * 90));
+        });
+
+        Plotly.newPlot('preparedness-radar', [{
+            type: 'scatterpolar',
+            r: radarData.values,
+            theta: radarData.categories,
+            fill: 'toself',
+            line: {
+                color: '#0d6efd',
+                width: 3
+            },
+            fillcolor: 'rgba(13, 110, 253, 0.24)',
+            marker: {
+                color: '#6610f2',
+                size: 8
+            },
+            hovertemplate: '<b>%{theta}</b><br>%{r:.1f}/100<extra></extra>'
+        }], {
+            margin: {t: 20, r: 30, b: 20, l: 30},
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            polar: {
+                bgcolor: 'rgba(0,0,0,0)',
+                radialaxis: {
+                    visible: true,
+                    range: [0, 100],
+                    tickfont: {size: 11},
+                    gridcolor: 'rgba(13, 110, 253, 0.10)'
+                },
+                angularaxis: {
+                    tickfont: {size: 12, color: '#334155'},
+                    gridcolor: 'rgba(13, 110, 253, 0.10)'
+                }
+            },
+            showlegend: false,
+            font: {
+                family: 'Segoe UI, sans-serif'
+            }
+        }, {
+            responsive: true,
+            displayModeBar: false
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

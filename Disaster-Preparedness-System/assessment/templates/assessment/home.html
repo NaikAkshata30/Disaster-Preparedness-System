@@ -1,0 +1,108 @@
+{% extends 'assessment/base.html' %}
+
+{% block title %}Home - Disaster Awareness{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>🚨 Welcome to Disaster Preparedness System</h1>
+        <p class="lead mb-0 mt-2">Be Prepared. Be Safe. Be Ready.</p>
+    </div>
+
+    <!-- Introduction Section -->
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h3 class="card-title">🎯 What is Disaster Preparedness?</h3>
+                    <p class="card-text" style="font-size: 1.1rem; line-height: 1.8;">
+                        Disaster preparedness refers to the measures taken to prepare for and reduce the effects of disasters. 
+                        It involves planning, organizing resources, training, and preparing communities to respond effectively 
+                        when disaster strikes. Being prepared can save lives, reduce economic losses, and help communities 
+                        recover faster.
+                    </p>
+                    <div class="alert alert-info mt-3">
+                        <strong>💡 Did you know?</strong> Studies show that communities with high disaster preparedness 
+                        reduce casualties by up to 60% and economic losses by 40%.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Why It Matters -->
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <h3 class="text-center mb-4">🌟 Why Disaster Preparedness Matters</h3>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <div style="font-size: 3rem;">🛡️</div>
+                    <h5 class="card-title mt-3">Saves Lives</h5>
+                    <p class="card-text">Proper preparation reduces casualties and injuries during disasters.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <div style="font-size: 3rem;">💰</div>
+                    <h5 class="card-title mt-3">Reduces Losses</h5>
+                    <p class="card-text">Minimizes property damage and economic impact.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <div style="font-size: 3rem;">⚡</div>
+                    <h5 class="card-title mt-3">Faster Recovery</h5>
+                    <p class="card-text">Helps communities bounce back quickly after disasters.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disaster Types -->
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <h3 class="text-center mb-4">⚠️ Common Disaster Types</h3>
+        </div>
+        {% for disaster in disasters %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="disaster-icon text-center">{{ disaster.icon }}</div>
+                    <h4 class="card-title text-center">{{ disaster.name }}</h4>
+                    <p class="card-text"><strong>Description:</strong> {{ disaster.description }}</p>
+                    <hr>
+                    <p class="mb-2"><strong>Preparedness Tips:</strong></p>
+                    <ul class="mb-0">
+                        {% for tip in disaster.preparedness_tips %}
+                            <li>{{ tip }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Call to Action -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center py-5">
+                    <h2 class="mb-3">🎯 Ready to Check Your Preparedness?</h2>
+                    <p class="lead mb-4">Take our comprehensive assessment to evaluate your disaster readiness!</p>
+                    <a href="{% url 'assessment' %}" class="btn btn-light btn-lg btn-custom">
+                        📝 Start Assessment Now
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,988 @@
+{% extends 'assessment/base.html' %}
+
+{% block title %}Interactive Analytics Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-shell {
+        background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+        border-radius: 18px;
+        padding: 1.5rem;
+    }
+
+    .filter-panel,
+    .chart-card,
+    .kpi-card,
+    .drilldown-card,
+    .summary-card {
+        border: 0;
+        border-radius: 18px;
+        box-shadow: 0 12px 28px rgba(31, 56, 88, 0.12);
+        overflow: hidden;
+    }
+
+    .filter-panel .card-body,
+    .summary-card .card-body,
+    .drilldown-card .card-body,
+    .chart-card .card-body,
+    .kpi-card .card-body {
+        padding: 1.25rem;
+    }
+
+    .filter-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin: 0.2rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(102, 126, 234, 0.12);
+        color: #364fc7;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .kpi-card {
+        position: relative;
+        color: white;
+        min-height: 170px;
+    }
+
+    .kpi-card::after {
+        content: '';
+        position: absolute;
+        right: -25px;
+        bottom: -30px;
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.14);
+    }
+
+    .kpi-card.primary { background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%); }
+    .kpi-card.success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+    .kpi-card.danger  { background: linear-gradient(135deg, #d90429 0%, #ef233c 100%); }
+    .kpi-card.warning { background: linear-gradient(135deg, #f48c06 0%, #ffba08 100%); }
+
+    .kpi-icon {
+        font-size: 2rem;
+        opacity: 0.92;
+    }
+
+    .kpi-value {
+        font-size: 2.4rem;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        margin: 0.85rem 0 0.3rem;
+    }
+
+    .kpi-subtext {
+        font-size: 0.95rem;
+        opacity: 0.92;
+        margin-bottom: 0;
+    }
+
+    .chart-toolbar {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .chart-container {
+        min-height: 390px;
+    }
+
+    .compact-chart {
+        min-height: 360px;
+    }
+
+    .chart-title {
+        font-weight: 700;
+        color: #1f3b63;
+    }
+
+    .chart-subtitle {
+        color: #6c757d;
+        font-size: 0.95rem;
+        margin-bottom: 0;
+    }
+
+    .refresh-badge {
+        background: rgba(25, 135, 84, 0.1);
+        color: #198754;
+        border-radius: 999px;
+        padding: 0.35rem 0.8rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .no-data-panel {
+        display: none;
+        border-radius: 18px;
+    }
+
+    .drilldown-table thead th {
+        white-space: nowrap;
+        font-size: 0.86rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #5c677d;
+    }
+
+    .drilldown-table tbody td {
+        vertical-align: middle;
+        font-size: 0.94rem;
+    }
+
+    .status-pill {
+        display: inline-block;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+
+    .status-pill.low { background: rgba(220, 53, 69, 0.12); color: #c92a2a; }
+    .status-pill.medium { background: rgba(255, 193, 7, 0.18); color: #b08900; }
+    .status-pill.high { background: rgba(25, 135, 84, 0.14); color: #2b8a3e; }
+
+    .loading-overlay {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.35);
+        z-index: 1050;
+        backdrop-filter: blur(4px);
+    }
+
+    .loading-overlay.active {
+        display: flex;
+    }
+
+    .loading-box {
+        background: white;
+        padding: 1.1rem 1.4rem;
+        border-radius: 14px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        font-weight: 700;
+        color: #1f3b63;
+    }
+
+    @media (max-width: 768px) {
+        .chart-toolbar {
+            justify-content: flex-start;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="page-header">
+        <h1>📊 Live Preparedness Intelligence Dashboard</h1>
+        <p class="lead mb-0 mt-2">Interactive, database-driven analytics with drill-down exploration and real-time refresh.</p>
+    </div>
+
+    <div class="dashboard-shell">
+        <div class="card filter-panel mb-4">
+            <div class="card-body">
+                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-3">
+                    <div>
+                        <h4 class="mb-1">Dashboard Filters</h4>
+                        <p class="text-muted mb-0">Slice live assessment data by time window, preparedness band, location profile, and family size.</p>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="refresh-badge" id="lastUpdatedBadge">⏱ Awaiting live sync</span>
+                        <button type="button" class="btn btn-outline-primary btn-custom" id="refreshDashboardBtn">🔄 Refresh Dashboard</button>
+                        <button type="button" class="btn btn-outline-secondary btn-custom" id="resetFiltersBtn">♻️ Reset Filters</button>
+                    </div>
+                </div>
+
+                <form id="dashboardFiltersForm">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-6 col-lg-3">
+                            <label class="form-label fw-semibold">Date Range Start</label>
+                            <input type="date" class="form-control" name="start_date" id="startDateFilter">
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <label class="form-label fw-semibold">Date Range End</label>
+                            <input type="date" class="form-control" name="end_date" id="endDateFilter">
+                        </div>
+                        <div class="col-md-6 col-lg-2">
+                            <label class="form-label fw-semibold">Preparedness Level</label>
+                            <select class="form-select" name="preparedness_level" id="preparednessLevelFilter">
+                                <option value="">All Levels</option>
+                                {% for option in preparedness_levels %}
+                                    <option value="{{ option.value }}">{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-lg-2">
+                            <label class="form-label fw-semibold">Location Type</label>
+                            <select class="form-select" name="location_type" id="locationTypeFilter">
+                                <option value="">All Locations</option>
+                                {% for option in location_types %}
+                                    <option value="{{ option.value }}">{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-lg-2">
+                            <label class="form-label fw-semibold">Family Size</label>
+                            <select class="form-select" name="family_size" id="familySizeFilter">
+                                <option value="">All Sizes</option>
+                                {% for option in family_size_options %}
+                                    <option value="{{ option.value }}">{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary btn-custom">Apply Filters</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card summary-card mb-4">
+            <div class="card-body d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                <div>
+                    <h5 class="mb-1">Active Dashboard Context</h5>
+                    <p class="text-muted mb-0">Charts, KPI cards, and drill-down tables are generated directly from current database records.</p>
+                </div>
+                <div id="activeFiltersSummary"></div>
+            </div>
+        </div>
+
+        <div id="noDataPanel" class="alert alert-warning text-center no-data-panel mb-4" role="alert">
+            <h4 class="alert-heading">⚠️ No Data Available for the Current Filter Set</h4>
+            <p class="mb-3">Adjust the filters or submit new assessments to populate the live dashboard.</p>
+            <a href="{% url 'assessment' %}" class="btn btn-primary btn-custom">📝 Submit a New Assessment</a>
+        </div>
+
+        <div id="dashboardContentArea">
+            <div class="row g-4 mb-4">
+                <div class="col-md-6 col-xl-3">
+                    <div class="card kpi-card primary h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="text-uppercase small fw-semibold opacity-75">Total Assessments</div>
+                                    <div class="kpi-value" data-kpi="total_assessments">0</div>
+                                    <p class="kpi-subtext">Live submissions included in analysis</p>
+                                </div>
+                                <div class="kpi-icon">📝</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <div class="card kpi-card success h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="text-uppercase small fw-semibold opacity-75">Average Score</div>
+                                    <div class="kpi-value" data-kpi="average_score">0</div>
+                                    <p class="kpi-subtext">Average preparedness score out of 100</p>
+                                </div>
+                                <div class="kpi-icon">📈</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <div class="card kpi-card danger h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="text-uppercase small fw-semibold opacity-75">High Risk Users</div>
+                                    <div class="kpi-value" data-kpi="high_risk_users">0</div>
+                                    <p class="kpi-subtext">Low-preparedness assessments needing action</p>
+                                </div>
+                                <div class="kpi-icon">🚨</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-xl-3">
+                    <div class="card kpi-card warning h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="text-uppercase small fw-semibold opacity-75">Prepared Users</div>
+                                    <div class="kpi-value" data-kpi="prepared_users">0</div>
+                                    <p class="kpi-subtext">High-preparedness assessments performing well</p>
+                                </div>
+                                <div class="kpi-icon">✅</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-xl-7">
+                    <div class="card chart-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                                <div>
+                                    <h5 class="chart-title mb-1">Preparedness Level Distribution</h5>
+                                    <p class="chart-subtitle">Interactive bar chart for low, medium, and high preparedness bands.</p>
+                                </div>
+                                <div class="chart-toolbar">
+                                    <button class="btn btn-sm btn-outline-primary export-chart-btn" data-chart-id="preparednessBarChart" data-format="png">Export PNG</button>
+                                    <button class="btn btn-sm btn-outline-dark export-chart-btn" data-chart-id="preparednessBarChart" data-format="pdf">Export PDF</button>
+                                </div>
+                            </div>
+                            <div id="preparednessBarChart" class="chart-container"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-5">
+                    <div class="card chart-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                                <div>
+                                    <h5 class="chart-title mb-1">Location Type Mix</h5>
+                                    <p class="chart-subtitle">Interactive pie chart for assessment volume across location profiles.</p>
+                                </div>
+                                <div class="chart-toolbar">
+                                    <button class="btn btn-sm btn-outline-primary export-chart-btn" data-chart-id="locationPieChart" data-format="png">Export PNG</button>
+                                    <button class="btn btn-sm btn-outline-dark export-chart-btn" data-chart-id="locationPieChart" data-format="pdf">Export PDF</button>
+                                </div>
+                            </div>
+                            <div id="locationPieChart" class="chart-container compact-chart"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-xl-5">
+                    <div class="card chart-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                                <div>
+                                    <h5 class="chart-title mb-1">Emergency Kit Coverage</h5>
+                                    <p class="chart-subtitle">Donut chart highlighting readiness gaps in emergency supplies.</p>
+                                </div>
+                                <div class="chart-toolbar">
+                                    <button class="btn btn-sm btn-outline-primary export-chart-btn" data-chart-id="emergencyKitDonutChart" data-format="png">Export PNG</button>
+                                    <button class="btn btn-sm btn-outline-dark export-chart-btn" data-chart-id="emergencyKitDonutChart" data-format="pdf">Export PDF</button>
+                                </div>
+                            </div>
+                            <div id="emergencyKitDonutChart" class="chart-container compact-chart"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-7">
+                    <div class="card chart-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                                <div>
+                                    <h5 class="chart-title mb-1">Assessment Trend Analysis Over Time</h5>
+                                    <p class="chart-subtitle">Line chart showing average scores and assessment volume by submission date.</p>
+                                </div>
+                                <div class="chart-toolbar">
+                                    <button class="btn btn-sm btn-outline-primary export-chart-btn" data-chart-id="trendLineChart" data-format="png">Export PNG</button>
+                                    <button class="btn btn-sm btn-outline-dark export-chart-btn" data-chart-id="trendLineChart" data-format="pdf">Export PDF</button>
+                                </div>
+                            </div>
+                            <div id="trendLineChart" class="chart-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-xl-7">
+                    <div class="card chart-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                                <div>
+                                    <h5 class="chart-title mb-1">Preparedness Category Comparison</h5>
+                                    <p class="chart-subtitle">Grouped bar chart comparing readiness attributes across preparedness levels.</p>
+                                </div>
+                                <div class="chart-toolbar">
+                                    <button class="btn btn-sm btn-outline-primary export-chart-btn" data-chart-id="categoryComparisonChart" data-format="png">Export PNG</button>
+                                    <button class="btn btn-sm btn-outline-dark export-chart-btn" data-chart-id="categoryComparisonChart" data-format="pdf">Export PDF</button>
+                                </div>
+                            </div>
+                            <div id="categoryComparisonChart" class="chart-container"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-5">
+                    <div class="card chart-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                                <div>
+                                    <h5 class="chart-title mb-1">Overall Preparedness Radar</h5>
+                                    <p class="chart-subtitle">Radar chart comparing preparedness dimensions as a percentage of readiness.</p>
+                                </div>
+                                <div class="chart-toolbar">
+                                    <button class="btn btn-sm btn-outline-primary export-chart-btn" data-chart-id="preparednessRadarChart" data-format="png">Export PNG</button>
+                                    <button class="btn btn-sm btn-outline-dark export-chart-btn" data-chart-id="preparednessRadarChart" data-format="pdf">Export PDF</button>
+                                </div>
+                            </div>
+                            <div id="preparednessRadarChart" class="chart-container compact-chart"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="card chart-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                                <div>
+                                    <h5 class="chart-title mb-1">Preparedness Score Heatmap</h5>
+                                    <p class="chart-subtitle">Heatmap of average preparedness scores by location type and family-size segment.</p>
+                                </div>
+                                <div class="chart-toolbar">
+                                    <button class="btn btn-sm btn-outline-primary export-chart-btn" data-chart-id="scoreHeatmapChart" data-format="png">Export PNG</button>
+                                    <button class="btn btn-sm btn-outline-dark export-chart-btn" data-chart-id="scoreHeatmapChart" data-format="pdf">Export PDF</button>
+                                </div>
+                            </div>
+                            <div id="scoreHeatmapChart" class="chart-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card drilldown-card">
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-3">
+                        <div>
+                            <h5 class="mb-1" id="drilldownTitle">Drill-Down Analytics</h5>
+                            <p class="text-muted mb-0" id="drilldownDescription">Click any chart element to reveal the detailed records behind that visual segment.</p>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <span class="badge bg-primary-subtle text-primary-emphasis px-3 py-2" id="drilldownCountBadge">0 records</span>
+                            <span class="badge bg-success-subtle text-success-emphasis px-3 py-2" id="drilldownAverageBadge">Avg score: 0</span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle drilldown-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Submitted</th>
+                                    <th>Score</th>
+                                    <th>Preparedness</th>
+                                    <th>Location</th>
+                                    <th>Family Size</th>
+                                    <th>Housing</th>
+                                    <th>Emergency Kit</th>
+                                    <th>Water Storage</th>
+                                    <th>Evacuation Plan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="drilldownTableBody">
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted py-4">No drill-down selected yet. Click a chart section to inspect the underlying assessments.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-box">
+        <div class="spinner-border text-primary" role="status"></div>
+        <span>Refreshing live dashboard data...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+    const dashboardDataUrl = "{% url 'dashboard_data' %}";
+    const dashboardDrilldownUrl = "{% url 'dashboard_drilldown' %}";
+    const initialNoData = {{ no_data|yesno:'true,false' }};
+    const chartRegistry = {};
+
+    function getFilters() {
+        const form = document.getElementById('dashboardFiltersForm');
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+        for (const [key, value] of formData.entries()) {
+            if (value) {
+                params.append(key, value);
+            }
+        }
+        return params;
+    }
+
+    function toggleLoading(show) {
+        document.getElementById('loadingOverlay').classList.toggle('active', show);
+    }
+
+    function animateCounter(element, targetValue) {
+        const isFloat = String(targetValue).includes('.');
+        const startValue = Number(element.dataset.currentValue || 0);
+        const endValue = Number(targetValue || 0);
+        const duration = 700;
+        const startTime = performance.now();
+
+        function frame(now) {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const current = startValue + ((endValue - startValue) * progress);
+            element.textContent = isFloat ? current.toFixed(1) : Math.round(current).toLocaleString();
+            if (progress < 1) {
+                requestAnimationFrame(frame);
+            } else {
+                element.dataset.currentValue = endValue;
+                element.textContent = isFloat ? endValue.toFixed(1) : Math.round(endValue).toLocaleString();
+            }
+        }
+
+        requestAnimationFrame(frame);
+    }
+
+    function updateKpis(kpis) {
+        document.querySelectorAll('[data-kpi]').forEach((element) => {
+            const key = element.dataset.kpi;
+            animateCounter(element, kpis[key] || 0);
+        });
+    }
+
+    function updateSummary(summary) {
+        const summaryContainer = document.getElementById('activeFiltersSummary');
+        const badge = document.getElementById('lastUpdatedBadge');
+        const filters = (summary && summary.filters_applied && summary.filters_applied.length)
+            ? summary.filters_applied.map(item => `<span class="filter-chip">🔎 ${item}</span>`).join('')
+            : '<span class="filter-chip">All live records</span>';
+        summaryContainer.innerHTML = filters;
+        badge.textContent = summary && summary.last_updated
+    }
+
+    function chartConfig() {
+        return {
+            responsive: true,
+            displaylogo: false,
+            modeBarButtonsToRemove: ['select2d', 'lasso2d', 'toggleSpikelines'],
+            toImageButtonOptions: {
+                format: 'png',
+                filename: 'dashboard_chart_export',
+                height: 720,
+                width: 1280,
+                scale: 2,
+            },
+        };
+    }
+
+    function registerChart(id, chartType, plotElement, meta = {}) {
+        chartRegistry[id] = { chartType, plotElement, meta };
+    }
+
+    function renderPreparednessBar(chart) {
+        const element = document.getElementById('preparednessBarChart');
+        const data = [{
+            type: 'bar',
+            x: chart.labels,
+            y: chart.values,
+            marker: { color: chart.colors, line: { color: '#ffffff', width: 1.6 } },
+            customdata: chart.keys,
+            hovertemplate: '<b>%{x}</b><br>Assessments: %{y}<extra></extra>',
+        }];
+        const layout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            margin: { t: 10, r: 15, b: 55, l: 60 },
+            xaxis: { title: 'Preparedness Level' },
+            yaxis: { title: 'Assessment Count', rangemode: 'tozero', gridcolor: 'rgba(31,59,99,0.08)' },
+        };
+        Plotly.newPlot(element, data, layout, chartConfig()).then((plot) => {
+            plot.on('plotly_click', (event) => {
+                const point = event.points[0];
+                loadDrilldown({ chart: 'preparedness_bar', value: point.customdata });
+            });
+            registerChart('preparednessBarChart', 'preparedness_bar', plot);
+        });
+    }
+
+    function renderLocationPie(chart) {
+        const element = document.getElementById('locationPieChart');
+        const data = [{
+            type: 'pie',
+            labels: chart.labels,
+            values: chart.values,
+            customdata: chart.keys,
+            textinfo: 'label+percent',
+            hovertemplate: '<b>%{label}</b><br>Assessments: %{value}<br>Share: %{percent}<extra></extra>',
+            marker: {
+                colors: ['#4361ee', '#4cc9f0', '#f72585', '#7209b7', '#4895ef', '#43aa8b'],
+                line: { color: '#ffffff', width: 2 },
+            },
+        }];
+        const layout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            margin: { t: 10, r: 10, b: 10, l: 10 },
+            legend: { orientation: 'h', y: -0.08 },
+        };
+        Plotly.newPlot(element, data, layout, chartConfig()).then((plot) => {
+            plot.on('plotly_click', (event) => {
+                const point = event.points[0];
+                loadDrilldown({ chart: 'location_pie', value: point.customdata });
+            });
+            registerChart('locationPieChart', 'location_pie', plot);
+        });
+    }
+
+    function renderEmergencyKitDonut(chart) {
+        const element = document.getElementById('emergencyKitDonutChart');
+        const data = [{
+            type: 'pie',
+            hole: 0.58,
+            labels: chart.labels,
+            values: chart.values,
+            customdata: chart.keys,
+            marker: { colors: chart.colors, line: { color: '#ffffff', width: 2 } },
+            textinfo: 'label+value',
+            hovertemplate: '<b>%{label}</b><br>Assessments: %{value}<br>Share: %{percent}<extra></extra>',
+        }];
+        const layout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            margin: { t: 10, r: 10, b: 10, l: 10 },
+            annotations: [{
+                text: 'Kit\nCoverage',
+                showarrow: false,
+                font: { size: 18, color: '#1f3b63', family: 'Segoe UI, sans-serif' },
+            }],
+            legend: { orientation: 'h', y: -0.08 },
+        };
+        Plotly.newPlot(element, data, layout, chartConfig()).then((plot) => {
+            plot.on('plotly_click', (event) => {
+                const point = event.points[0];
+                loadDrilldown({ chart: 'emergency_kit_donut', value: point.customdata });
+            });
+            registerChart('emergencyKitDonutChart', 'emergency_kit_donut', plot);
+        });
+    }
+
+    function renderTrendLine(chart) {
+        const element = document.getElementById('trendLineChart');
+        const data = [
+            {
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Average Score',
+                x: chart.dates,
+                y: chart.average_scores,
+                line: { color: '#4361ee', width: 4 },
+                marker: { size: 9, color: '#4361ee' },
+                hovertemplate: '<b>%{x}</b><br>Average Score: %{y}<extra></extra>',
+                yaxis: 'y1',
+            },
+            {
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Assessment Count',
+                x: chart.dates,
+                y: chart.assessments,
+                line: { color: '#f72585', width: 3, dash: 'dot' },
+                marker: { size: 8, color: '#f72585' },
+                hovertemplate: '<b>%{x}</b><br>Assessments: %{y}<extra></extra>',
+                yaxis: 'y2',
+            },
+        ];
+        const layout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            margin: { t: 10, r: 55, b: 55, l: 60 },
+            legend: { orientation: 'h', y: 1.15 },
+            xaxis: { title: 'Submission Date' },
+            yaxis: { title: 'Average Score', range: [0, 100], gridcolor: 'rgba(31,59,99,0.08)' },
+            yaxis2: {
+                title: 'Assessment Count',
+                overlaying: 'y',
+                side: 'right',
+                rangemode: 'tozero',
+            },
+        };
+        Plotly.newPlot(element, data, layout, chartConfig()).then((plot) => {
+            plot.on('plotly_click', (event) => {
+                const point = event.points[0];
+                loadDrilldown({ chart: 'trend_line', value: point.x });
+            });
+            registerChart('trendLineChart', 'trend_line', plot);
+        });
+    }
+
+    function renderCategoryComparison(chart) {
+        const element = document.getElementById('categoryComparisonChart');
+        const data = chart.series.map((series) => ({
+            type: 'bar',
+            name: series.label,
+            x: chart.categories,
+            y: series.values,
+            marker: { color: series.color },
+            customdata: Array(chart.categories.length).fill(series.level),
+            hovertemplate: '<b>%{x}</b><br>%{fullData.name}: %{y}%<extra></extra>',
+        }));
+        const layout = {
+            barmode: 'group',
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            margin: { t: 10, r: 15, b: 75, l: 60 },
+            xaxis: { title: 'Preparedness Category', tickangle: -15 },
+            yaxis: { title: 'Readiness Coverage (%)', range: [0, 100], gridcolor: 'rgba(31,59,99,0.08)' },
+            legend: { orientation: 'h', y: 1.13 },
+        };
+        Plotly.newPlot(element, data, layout, chartConfig()).then((plot) => {
+            plot.on('plotly_click', (event) => {
+                const point = event.points[0];
+                loadDrilldown({
+                    chart: 'category_comparison',
+                    category: point.x,
+                    level: point.customdata,
+                });
+            });
+            registerChart('categoryComparisonChart', 'category_comparison', plot);
+        });
+    }
+
+    function renderPreparednessRadar(chart) {
+        const element = document.getElementById('preparednessRadarChart');
+        const categories = [...chart.categories, chart.categories[0]];
+        const values = [...chart.values, chart.values[0]];
+        const keys = [...chart.keys, chart.keys[0]];
+        const data = [{
+            type: 'scatterpolar',
+            r: values,
+            theta: categories,
+            fill: 'toself',
+            customdata: keys,
+            name: 'Preparedness Coverage',
+            line: { color: '#3a86ff', width: 3 },
+            fillcolor: 'rgba(58, 134, 255, 0.28)',
+            hovertemplate: '<b>%{theta}</b><br>Readiness: %{r}%<extra></extra>',
+        }];
+        const layout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            margin: { t: 10, r: 20, b: 10, l: 20 },
+            polar: {
+                radialaxis: { visible: true, range: [0, 100], tickfont: { size: 10 } },
+            },
+            showlegend: false,
+        };
+        Plotly.newPlot(element, data, layout, chartConfig()).then((plot) => {
+            plot.on('plotly_click', (event) => {
+                const point = event.points[0];
+                loadDrilldown({
+                    chart: 'preparedness_radar',
+                    metric: point.theta,
+                    field: point.customdata,
+                });
+            });
+            registerChart('preparednessRadarChart', 'preparedness_radar', plot);
+        });
+    }
+
+    function renderScoreHeatmap(chart) {
+        const element = document.getElementById('scoreHeatmapChart');
+        const data = [{
+            type: 'heatmap',
+            x: chart.columns,
+            y: chart.rows,
+            z: chart.values,
+            colorscale: [
+                [0, '#d90429'],
+                [0.25, '#f48c06'],
+                [0.5, '#ffd166'],
+                [0.75, '#4cc9f0'],
+                [1, '#2f9e44'],
+            ],
+            colorbar: { title: 'Avg Score' },
+            hovertemplate: '<b>%{y}</b><br>Family Size: %{x}<br>Average Score: %{z}<extra></extra>',
+        }];
+        const layout = {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            margin: { t: 10, r: 15, b: 55, l: 120 },
+            xaxis: { title: 'Family Size Segment' },
+            yaxis: { title: 'Location Type' },
+        };
+        Plotly.newPlot(element, data, layout, chartConfig()).then((plot) => {
+            plot.on('plotly_click', (event) => {
+                const point = event.points[0];
+                const rowIndex = chart.rows.indexOf(point.y);
+                const colIndex = chart.columns.indexOf(point.x);
+                loadDrilldown({
+                    chart: 'score_heatmap',
+                    location_type_key: chart.row_keys[rowIndex],
+                    family_size_key: chart.column_keys[colIndex],
+                });
+            });
+            registerChart('scoreHeatmapChart', 'score_heatmap', plot);
+        });
+    }
+
+    function renderCharts(charts) {
+        renderPreparednessBar(charts.preparedness_bar);
+        renderLocationPie(charts.location_pie);
+        renderEmergencyKitDonut(charts.emergency_kit_donut);
+        renderTrendLine(charts.trend_line);
+        renderCategoryComparison(charts.category_comparison);
+        renderPreparednessRadar(charts.preparedness_radar);
+        renderScoreHeatmap(charts.score_heatmap);
+    }
+
+    function renderDrilldown(payload) {
+        document.getElementById('drilldownTitle').textContent = payload.title || 'Drill-Down Analytics';
+        document.getElementById('drilldownDescription').textContent = payload.description || 'Live drill-down details.';
+        document.getElementById('drilldownCountBadge').textContent = `${payload.count || 0} records`;
+        document.getElementById('drilldownAverageBadge').textContent = `Avg score: ${payload.average_score || 0}`;
+
+        const tbody = document.getElementById('drilldownTableBody');
+        if (!payload.records || payload.records.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4">No detailed records matched the selected chart segment.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = payload.records.map((record) => {
+            const levelClass = record.preparedness_level.toLowerCase().includes('low')
+                ? 'low'
+                : (record.preparedness_level.toLowerCase().includes('medium') ? 'medium' : 'high');
+            return `
+                <tr>
+                    <td>#${record.id}</td>
+                    <td>${record.created_at}</td>
+                    <td><strong>${record.preparedness_score}</strong></td>
+                    <td><span class="status-pill ${levelClass}">${record.preparedness_level}</span></td>
+                    <td>${record.location_type}</td>
+                    <td>${record.household_size}</td>
+                    <td>${record.housing_type}</td>
+                    <td>${record.has_emergency_kit}</td>
+                    <td>${record.has_water_storage}</td>
+                    <td>${record.has_evacuation_plan}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function loadDrilldown(extraParams) {
+        const params = getFilters();
+        Object.entries(extraParams).forEach(([key, value]) => params.set(key, value));
+        const response = await fetch(`${dashboardDrilldownUrl}?${params.toString()}`);
+        const payload = await response.json();
+        renderDrilldown(payload);
+    }
+
+    async function fetchDashboardData(showLoader = true) {
+        if (showLoader) {
+            toggleLoading(true);
+        }
+        try {
+            const params = getFilters();
+            const response = await fetch(`${dashboardDataUrl}?${params.toString()}`);
+            const payload = await response.json();
+            updateSummary(payload.summary || {});
+
+            const noDataPanel = document.getElementById('noDataPanel');
+            const contentArea = document.getElementById('dashboardContentArea');
+
+            if (!payload.has_data) {
+                noDataPanel.style.display = 'block';
+                contentArea.style.display = 'none';
+                updateKpis(payload.kpis || {});
+                return;
+            }
+
+            noDataPanel.style.display = 'none';
+            contentArea.style.display = 'block';
+            updateKpis(payload.kpis || {});
+            renderCharts(payload.charts || {});
+        } catch (error) {
+            console.error('Dashboard refresh failed:', error);
+            alert('Unable to refresh dashboard data right now. Please try again.');
+        } finally {
+            if (showLoader) {
+                toggleLoading(false);
+            }
+        }
+    }
+
+    async function exportChart(chartId, format) {
+        const chart = chartRegistry[chartId];
+        if (!chart || !chart.plotElement) {
+            return;
+        }
+
+        if (format === 'png') {
+            await Plotly.downloadImage(chart.plotElement, {
+                format: 'png',
+                filename: chartId,
+                width: 1400,
+                height: 900,
+                scale: 2,
+            });
+            return;
+        }
+
+        if (format === 'pdf') {
+            const imageData = await Plotly.toImage(chart.plotElement, {
+                format: 'png',
+                width: 1400,
+                height: 900,
+                scale: 2,
+            });
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            pdf.setFontSize(16);
+            pdf.text('Disaster Preparedness Dashboard Export', 40, 34);
+            pdf.addImage(imageData, 'PNG', 30, 52, pageWidth - 60, pageHeight - 90);
+            pdf.save(`${chartId}.pdf`);
+        }
+    }
+
+    function wireActions() {
+        document.getElementById('dashboardFiltersForm').addEventListener('submit', (event) => {
+            event.preventDefault();
+            fetchDashboardData(true);
+        });
+
+        document.getElementById('refreshDashboardBtn').addEventListener('click', () => {
+            fetchDashboardData(true);
+        });
+
+        document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+            document.getElementById('dashboardFiltersForm').reset();
+            fetchDashboardData(true);
+        });
+
+        document.querySelectorAll('.export-chart-btn').forEach((button) => {
+            button.addEventListener('click', async () => {
+                await exportChart(button.dataset.chartId, button.dataset.format);
+            });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        wireActions();
+        fetchDashboardData(!initialNoData);
+        setInterval(() => fetchDashboardData(false), 60000);
+    });
+</script>
+{% endblock %}
